@@ -52,7 +52,7 @@ class ProductController extends Controller
     public function store(Request $request): RedirectResponse
     {
         //validate form
-        $request->validate([
+        $validated = $request->validate([
             'image'         => 'required|image|mimes:jpeg,jpg,png|max:2048',
             'title'         => 'required|min:5',
             'description'   => 'required|min:10',
@@ -60,21 +60,31 @@ class ProductController extends Controller
             'stock'         => 'required|numeric'
         ]);
 
-        //upload image
-        $image = $request->file('image');
-        $image->storeAs('public/products', $image->hashName());
+        try {
+            //upload image
+            $image = $request->file('image');
+            
+            // Generate unique filename
+            $imageName = $image->hashName();
+            
+            // Store image to storage/app/public/products
+            $path = $image->storeAs('public/products', $imageName);
+            
+            // Create product
+            Product::create([
+                'image'         => $imageName,
+                'title'         => $validated['title'],
+                'description'   => $validated['description'],
+                'price'         => $validated['price'],
+                'stock'         => $validated['stock']
+            ]);
 
-        //create product
-        Product::create([
-            'image'         => $image->hashName(),
-            'title'         => $request->title,
-            'description'   => $request->description,
-            'price'         => $request->price,
-            'stock'         => $request->stock
-        ]);
-
-        //redirect to index
-        return redirect()->route('products.index')->with(['success' => 'Data Berhasil Disimpan!']);
+            //redirect to index
+            return redirect()->route('products.index')->with(['success' => 'Data Berhasil Disimpan!']);
+            
+        } catch (\Exception $e) {
+            return redirect()->back()->with(['error' => 'Gagal menyimpan data: ' . $e->getMessage()]);
+        }
     }
     
     /**
@@ -117,7 +127,7 @@ class ProductController extends Controller
     public function update(Request $request, $id): RedirectResponse
     {
         //validate form
-        $request->validate([
+        $validated = $request->validate([
             'image'         => 'image|mimes:jpeg,jpg,png|max:2048',
             'title'         => 'required|min:5',
             'description'   => 'required|min:10',
@@ -128,38 +138,41 @@ class ProductController extends Controller
         //get product by ID
         $product = Product::findOrFail($id);
 
-        //check if image is uploaded
-        if ($request->hasFile('image')) {
+        try {
+            //check if image is uploaded
+            if ($request->hasFile('image')) {
+                //delete old image
+                Storage::delete('public/products/'.$product->image);
 
-						//delete old image
-            Storage::delete('products/'.$product->image);
+                //upload new image
+                $image = $request->file('image');
+                $imageName = $image->hashName();
+                $image->storeAs('public/products', $imageName);
 
-            //upload new image
-            $image = $request->file('image');
-            $image->storeAs('products', $image->hashName());
+                //update product with new image
+                $product->update([
+                    'image'         => $imageName,
+                    'title'         => $validated['title'],
+                    'description'   => $validated['description'],
+                    'price'         => $validated['price'],
+                    'stock'         => $validated['stock']
+                ]);
+            } else {
+                //update product without image
+                $product->update([
+                    'title'         => $validated['title'],
+                    'description'   => $validated['description'],
+                    'price'         => $validated['price'],
+                    'stock'         => $validated['stock']
+                ]);
+            }
 
-            //update product with new image
-            $product->update([
-                'image'         => $image->hashName(),
-                'title'         => $request->title,
-                'description'   => $request->description,
-                'price'         => $request->price,
-                'stock'         => $request->stock
-            ]);
-
-        } else {
-
-            //update product without image
-            $product->update([
-                'title'         => $request->title,
-                'description'   => $request->description,
-                'price'         => $request->price,
-                'stock'         => $request->stock
-            ]);
+            //redirect to index
+            return redirect()->route('products.index')->with(['success' => 'Data Berhasil Diubah!']);
+            
+        } catch (\Exception $e) {
+            return redirect()->back()->with(['error' => 'Gagal mengupdate data: ' . $e->getMessage()]);
         }
-
-        //redirect to index
-        return redirect()->route('products.index')->with(['success' => 'Data Berhasil Diubah!']);
     }
     
     /**
@@ -173,13 +186,18 @@ class ProductController extends Controller
         //get product by ID
         $product = Product::findOrFail($id);
 
-        //delete image
-        Storage::delete('products/'. $product->image);
+        try {
+            //delete image
+            Storage::delete('public/products/'. $product->image);
 
-        //delete product
-        $product->delete();
+            //delete product
+            $product->delete();
 
-        //redirect to index
-        return redirect()->route('products.index')->with(['success' => 'Data Berhasil Dihapus!']);
+            //redirect to index
+            return redirect()->route('products.index')->with(['success' => 'Data Berhasil Dihapus!']);
+            
+        } catch (\Exception $e) {
+            return redirect()->back()->with(['error' => 'Gagal menghapus data: ' . $e->getMessage()]);
+        }
     }
 }

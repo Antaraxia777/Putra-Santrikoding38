@@ -21,7 +21,12 @@
 
                             <div class="form-group mb-3">
                                 <label class="font-weight-bold">IMAGE</label>
-                                <input type="file" class="form-control @error('image') is-invalid @enderror" name="image">
+                                <div class="mb-2">
+                                    <img src="{{ asset('/storage/products/'.$product->image) }}" class="img-thumbnail" style="width: 150px; height: auto;">
+                                    <p class="text-muted small mt-2">Gambar saat ini</p>
+                                </div>
+                                <input type="file" class="form-control @error('image') is-invalid @enderror" name="image" accept="image/*">
+                                <small class="text-muted">Biarkan kosong jika tidak ingin mengubah gambar</small>
                             
                                 <!-- error message untuk image -->
                                 @error('image')

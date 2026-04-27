@@ -19,6 +19,22 @@
                 </div>
                 <div class="card border-0 shadow-sm rounded">
                     <div class="card-body">
+                        <!-- Alert untuk success message -->
+                        @if ($message = Session::get('success'))
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                {{ $message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        @endif
+
+                        <!-- Alert untuk error message -->
+                        @if ($message = Session::get('error'))
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                {{ $message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        @endif
+                        
                         <a href="{{ route('products.create') }}" class="btn btn-md btn-success mb-3">ADD PRODUCT</a>
                         <table class="table table-bordered">
                             <thead>
@@ -34,7 +50,7 @@
                                 @forelse ($products as $product)
                                     <tr>
                                         <td class="text-center">
-                                            <img src="{{ asset('/storage/products/'.$product->image) }}" class="rounded" style="width: 150px">
+                                            <img src="{{ asset('/storage/public/products/'.$product->image) }}" class="rounded" style="width: 150px">
                                         </td>
                                         <td>{{ $product->title }}</td>
                                         <td>{{ "Rp " . number_format($product->price,2,',','.') }}</td>
